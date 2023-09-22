@@ -1,7 +1,6 @@
 const express = require('express');
 
 var Log = require('../models/logs');
-var Routine = require('../models/routines');
 
 function getLogs (req, res) {
     Log.find({}).then(logs => {
@@ -37,7 +36,6 @@ function postLogs (req, res) {
         logExercises: logExercises
     })
 
-    // console.log(log)
     log.save()
     res.status(200).send(log)
 };
