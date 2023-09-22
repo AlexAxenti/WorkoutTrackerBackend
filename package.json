@@ -1,4 +1,9 @@
 {
+  "name": "workouttrackerbackend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server/server.js"
+  },
   "dependencies": {
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
