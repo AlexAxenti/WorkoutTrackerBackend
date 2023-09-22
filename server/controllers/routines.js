@@ -47,11 +47,17 @@ function updateRoutines (req, res) {
         routine.exerciseNames = reqBody.exerciseNames
 
         routine.save()
-    });
+        res.status(200).send(routine)
+    })
+    .catch(err => {
+        console.log(err)
+        res.status(404).send("Unable to update routine")
+    })
 };
 
 module.exports = {
     getRoutines,
     postRoutines,
     deleteRoutines,
+    updateRoutines,
 }

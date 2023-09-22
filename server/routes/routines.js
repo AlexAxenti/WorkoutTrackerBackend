@@ -7,6 +7,8 @@ router.get('/', controller.getRoutines);
 
 router.post('/', controller.postRoutines);
 
+router.put('/', controller.updateRoutines);
+
 router.delete('/', controller.deleteRoutines);
 
 module.exports = router;

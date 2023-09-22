@@ -16,7 +16,7 @@ function postLogs (req, res) {
     reqBody = req.body;
     logName = reqBody.logName;
     logRoutine = reqBody.logRoutine;
-    logExercises = []
+    logExercises = reqBody.logExercises;
 
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
@@ -28,37 +28,18 @@ function postLogs (req, res) {
 
     logDate = date
 
+    console.log(logExercises)
+
     let log = new Log({
-        logName,
-        logDate,
-        logRoutine,
-        logExercises
+        logName: logName,
+        logDate: logDate,
+        logRoutine: logRoutine,
+        logExercises: logExercises
     })
 
-    if(logRoutine) {
-        Routine.findOne({ routineName: logRoutine }).then(routine => {
-            routineExercises = routine.routineExercises
-            for (let i = 0; i < routineExercises.length; i++) {
-                console.log(routineExercises[i])
-                exercise = {
-                    exerciseName: routineExercises[i],
-                    sets: []
-                }
-                logExercises.push(exercise)
-            }
-            log.logExercises = logExercises;
-            log.save();
-
-            res.status(200).send(log)
-        }).catch(err => {
-            console.log(err)
-            res.status(500).send("Error Creating Logs")
-        });
-    } else {
-        log.save();
-
-        res.status(200).send(log)
-    }
+    // console.log(log)
+    log.save()
+    res.status(200).send(log)
 };
 
 function deleteLogs(req, res) {
@@ -83,6 +64,11 @@ function updateLogs (req, res) {
         log.logExercises = reqBody.logExercises
 
         log.save()
+        res.status(200).send(log)
+    })
+    .catch(err => {
+        console.log(err)
+        res.status(404).send("Unable to update log")
     })
 }
 
@@ -90,4 +76,5 @@ module.exports = {
     getLogs,
     postLogs,
     deleteLogs,
+    updateLogs,
 }
