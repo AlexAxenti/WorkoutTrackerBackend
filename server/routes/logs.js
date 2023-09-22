@@ -7,4 +7,6 @@ router.get('/', controller.getLogs);
 
 router.post('/', controller.postLogs);
 
+router.delete('/', controller.deleteLogs);
+
 module.exports = router;
