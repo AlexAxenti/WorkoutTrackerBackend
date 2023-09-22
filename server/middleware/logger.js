@@ -14,8 +14,7 @@ let logger = (req, res, next) => {
         current_datetime.getSeconds();
     let method = req.method;
     let url = req.url;
-    let status = res.statusCode;
-    let log = `[${formatted_date}] ${method}:${url} ${status}`;
+    let log = `[${formatted_date}] ${method}:${url}`;
     console.log(log);
     next();
 }

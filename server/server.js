@@ -9,7 +9,6 @@ var logger = require('./middleware/logger');
 var logsRouter = require('./routes/logs');
 var routinesRouter = require('./routes/routines');
 
-console.log(process.env.MONGO_DB_CONNECTION);
 mongoose.connect(process.env.MONGO_DB_CONNECTION, { useNewUrlParser: true, useUnifiedTopology: true });
 
 app.use(logger);

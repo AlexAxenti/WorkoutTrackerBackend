@@ -4,7 +4,7 @@ var Log = require('../models/logs');
 
 function getLogs (req, res) {
     Log.find({}).then(logs => {
-        res.status(404).send(logs)
+        res.status(200).send(logs)
     }).catch(err => {
         console.log(err)
         res.status(404)
