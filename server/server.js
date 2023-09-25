@@ -15,13 +15,9 @@ app.use(logger);
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
 
-//app.use(cors());
+app.use(cors());
 app.use('/logs', logsRouter);
 app.use('/routines', routinesRouter);
-
-// app.get('*', (req, res) => {
-//     res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'))
-// });
 
 app.listen(process.env.PORT || 7000, () => {
     console.log(`Example app listening on port ${port}`)

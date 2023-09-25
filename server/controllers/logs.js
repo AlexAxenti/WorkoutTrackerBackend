@@ -27,8 +27,6 @@ function postLogs (req, res) {
 
     logDate = date
 
-    console.log(logExercises)
-
     let log = new Log({
         logName: logName,
         logDate: logDate,

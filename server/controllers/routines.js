@@ -22,7 +22,6 @@ function postRoutines (req, res) {
     })
 
     routine.save()
-
     res.status(200).send(routine);
 };
 
