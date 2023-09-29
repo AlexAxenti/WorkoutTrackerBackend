@@ -43,7 +43,7 @@ function updateRoutines (req, res) {
 
     Routine.findOne({ _id: routineId }).then(routine => {
         routine.routineName = reqBody.routineName
-        routine.exerciseNames = reqBody.exerciseNames
+        routine.routineExercises = reqBody.routineExercises
 
         routine.save()
         res.status(200).send(routine)
