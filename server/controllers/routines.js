@@ -4,7 +4,7 @@ var Routine = require('../models/routines');
 
 function getRoutines (req, res) {
     Routine.find({}).then(routines => {
-        res.status(404).send(routines)
+        res.status(200).send(routines)
     }).catch(err => {
         console.log(err)
         res.status(404)
