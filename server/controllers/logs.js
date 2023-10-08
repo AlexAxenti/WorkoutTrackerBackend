@@ -3,7 +3,7 @@ const express = require('express');
 var Log = require('../models/logs');
 
 function getLogs (req, res) {
-    Log.find({}).then(logs => {
+    Log.find({}).sort('-date').then(logs => {
         res.status(200).send(logs)
     }).catch(err => {
         console.log(err)
