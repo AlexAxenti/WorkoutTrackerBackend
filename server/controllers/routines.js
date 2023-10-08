@@ -3,7 +3,7 @@ const express = require('express');
 var Routine = require('../models/routines');
 
 function getRoutines (req, res) {
-    Routine.find({}).then(routines => {
+    Routine.find({}).sort({ routineName: 1 }).then(routines => {
         res.status(200).send(routines)
     }).catch(err => {
         console.log(err)
