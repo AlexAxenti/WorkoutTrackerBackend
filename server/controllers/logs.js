@@ -1,10 +1,10 @@
 const express = require('express');
 
 var Log = require('../models/logs');
-const logs = require('../models/logs');
+var Routine = require('../models/routines')
 
 function getLogs (req, res) {
-    Log.find({}).sort({ createdAt: 'desc' }).then(logs => {
+    Log.find({}).select('-logExercises').sort({ createdAt: 'desc' }).then(logs => {
         res.status(200).send(logs)
     }).catch(err => {
         console.log(err)
@@ -12,11 +12,43 @@ function getLogs (req, res) {
     });
 };
 
-function postLogs (req, res) {
+function getLog(req, res) {
+    logId = req.params.logId
+
+    Log.findOne({ _id: logId }).then(log => {
+        res.status(200).send(log)
+    }).catch(err => {
+        console.log(err)
+        res.status(404)
+    });
+};
+
+async function postLogs (req, res) {
     reqBody = req.body;
     logName = reqBody.logName;
     logRoutine = reqBody.logRoutine;
-    logExercises = reqBody.logExercises;
+    logExercises = []
+
+    if (logRoutine != 'None') {
+        // Routine.findOne({ 'routineName': logRoutine }).then(routine => {
+        //     logExercises = routine.routineExercises
+        // })
+        // .catch(err => {
+        //     console.log(err)
+        //     res.status(404).send("Unable to find routine")
+        // })
+        console.log("searching")
+        const routine = await Routine.findOne({ 'routineName': logRoutine })
+        console.log("found", routine)
+        if(!routine) {
+            return res.status(404).send("Unable to find routine")
+        }
+
+        for (const exercise of routine.routineExercises) {
+            logExercises.push({exerciseName: exercise, sets: []})
+        }
+        //logExercises = routine.routineExercises
+    }
 
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
@@ -27,7 +59,7 @@ function postLogs (req, res) {
     const date = yyyy + "-" + mm + "-" + dd + " " + hr + ":" + mt;
 
     logDate = date
-
+    console.log(logExercises)
     let log = new Log({
         logName: logName,
         logDate: logDate,
@@ -36,7 +68,8 @@ function postLogs (req, res) {
     })
 
     log.save()
-    res.status(200).send(log)
+    console.log(log)
+    res.status(200).send(log._id)
 };
 
 function deleteLogs(req, res) {
@@ -95,6 +128,7 @@ function updateLogExercise(req, res) {
 
 module.exports = {
     getLogs,
+    getLog,
     postLogs,
     deleteLogs,
     updateLogs,

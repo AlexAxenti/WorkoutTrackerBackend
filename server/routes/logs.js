@@ -5,11 +5,13 @@ var controller = require('../controllers/logs');
 
 router.get('/', controller.getLogs);
 
+router.get('/:logId', controller.getLog);
+
 router.post('/', controller.postLogs);
 
 router.put('/', controller.updateLogs);
 
-router.put('/exercise', controller.updateLogExercise)
+router.put('/exercise', controller.updateLogExercise);
 
 router.delete('/', controller.deleteLogs);
 
