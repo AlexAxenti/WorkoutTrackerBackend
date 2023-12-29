@@ -9,6 +9,8 @@ router.post('/', controller.postLogs);
 
 router.put('/', controller.updateLogs);
 
+router.put('/exercise', controller.updateLogExercise)
+
 router.delete('/', controller.deleteLogs);
 
 module.exports = router;

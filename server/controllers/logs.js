@@ -1,6 +1,7 @@
 const express = require('express');
 
 var Log = require('../models/logs');
+const logs = require('../models/logs');
 
 function getLogs (req, res) {
     Log.find({}).sort({ createdAt: 'desc' }).then(logs => {
@@ -68,9 +69,34 @@ function updateLogs (req, res) {
     })
 }
 
+
+function updateLogExercise(req, res) {
+    let reqBody = req.body
+
+    let logId = reqBody.logId
+    let exerciseId = reqBody.exerciseId
+
+    Log.findOne({ _id: logId }).then(log => {
+        for(i = 0; i < log.logExercises.length; i++) {
+            if(log.logExercises[i]._id == exerciseId) {
+                log.logExercises[i].sets = reqBody.sets
+                log.logExercises[i].exerciseName = reqBody.exerciseName
+            }
+        }
+
+        log.save()
+        res.status(200).send(log)
+    })
+    .catch(err => {
+        console.log(err)
+        res.status(404).send("Unable to update log")
+    })
+}
+
 module.exports = {
     getLogs,
     postLogs,
     deleteLogs,
     updateLogs,
+    updateLogExercise
 }
