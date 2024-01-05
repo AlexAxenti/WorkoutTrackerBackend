@@ -102,16 +102,38 @@ async function postLogs (req, res) {
     }
 };
 
-function deleteLogs(req, res) {
+async function deleteLogs(req, res) {
     reqBody = req.body;
     logId = req.body._id;
 
-    Log.deleteOne({ _id: logId }).catch(err => {
-        console.log(err)
-        res.status(404).send("Error")
-    })
+    const session = await mongoose.startSession()
+    session.startTransaction()
 
-    res.status(200).send('Log Deleted')
+    try {
+        const log = await Log.deleteOne({ _id: logId }, {session})
+
+        if (!log.deletedCount == 1) {
+            console.log("Log not found")
+            res.status(404).send("Error")
+        }
+
+        const exercises = await Exercise.find({ logInstances: logId })
+
+        for (const exercise of exercises) {
+            exercise.logInstances = exercise.logInstances.filter(id => id != logId)
+            await exercise.save({session})
+        }
+
+        await session.commitTransaction()
+
+        res.status(200).send("Log Deleted")
+    } catch (error) {
+        console.log("Transaction aborted:", error)
+        await session.abortTransaction()
+        return res.status(404).send("Error deleting log")
+    } finally {
+        await session.endSession()
+    }
 };
 
 async function updateLogs (req, res) {
@@ -126,16 +148,14 @@ async function updateLogs (req, res) {
 
         updatedExercises = checkForNewLogExercises(log.logExercises, reqBody.logExercises)
         if (updatedExercises == false) {
-            console.log("Same")
+            log.save()
+            res.status(200).send(log)
         } else {
-            console.log("Different")
-            console.log("removedNames:", updatedExercises.removedNames)
-            console.log("newNames:", updatedExercises.newNames)
-
             const session = await mongoose.startSession()
             session.startTransaction()
 
             try {
+                // Updated the removed exercises's logInstances
                 for (const exercise of updatedExercises.removedNames) {
                     const exerciseObject = await Exercise.findOne({ exerciseName: exercise })
 
@@ -143,17 +163,13 @@ async function updateLogs (req, res) {
                         throw new Error("The exercise " + exercise + " cannot be found.")
                     }
 
-                    console.log("ID:", logId)
-                    console.log(exerciseObject.logInstances)
-                    console.log(exerciseObject.logInstances[0] == logId)
-                    console.log(exerciseObject.logInstances[1] == logId)
-
                     exerciseObject.logInstances = exerciseObject.logInstances.filter(id => id != logId)
 
                     console.log(exerciseObject.logInstances)
                     await exerciseObject.save({session})
                 }
 
+                // Updated the newly added exercises's logInstances
                 for (const exercise of updatedExercises.newNames) {
                     const exerciseObject = await Exercise.findOne({ exerciseName: exercise })
 
