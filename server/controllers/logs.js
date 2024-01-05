@@ -1,7 +1,9 @@
-const express = require('express');
+const express = require('express')
+const mongoose = require('mongoose')
 
 var Log = require('../models/logs');
 var Routine = require('../models/routines')
+var Exercise = require('../models/exercises')
 
 function getLogs (req, res) {
     Log.find({}).select('-logExercises').sort({ createdAt: 'desc' }).then(logs => {
@@ -29,27 +31,6 @@ async function postLogs (req, res) {
     logRoutine = reqBody.logRoutine;
     logExercises = []
 
-    if (logRoutine != 'None') {
-        // Routine.findOne({ 'routineName': logRoutine }).then(routine => {
-        //     logExercises = routine.routineExercises
-        // })
-        // .catch(err => {
-        //     console.log(err)
-        //     res.status(404).send("Unable to find routine")
-        // })
-        console.log("searching")
-        const routine = await Routine.findOne({ 'routineName': logRoutine })
-        console.log("found", routine)
-        if(!routine) {
-            return res.status(404).send("Unable to find routine")
-        }
-
-        for (const exercise of routine.routineExercises) {
-            logExercises.push({exerciseName: exercise, sets: []})
-        }
-        //logExercises = routine.routineExercises
-    }
-
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
@@ -59,17 +40,66 @@ async function postLogs (req, res) {
     const date = yyyy + "-" + mm + "-" + dd + " " + hr + ":" + mt;
 
     logDate = date
-    console.log(logExercises)
+
+    // Create base log without a routine yet
     let log = new Log({
         logName: logName,
         logDate: logDate,
-        logRoutine: logRoutine,
-        logExercises: logExercises
     })
 
-    log.save()
-    console.log(log)
-    res.status(200).send(log._id)
+    // Check if routine was passed, if so then add exercises and update their log instances, else save log and send response
+    if (logRoutine != 'None') {
+        const routine = await Routine.findOne({ 'routineName': logRoutine })
+
+        if (!routine) {
+            return res.status(404).send("Unable to find routine")
+        }
+
+        const session = await mongoose.startSession()
+        session.startTransaction()
+        await log.save({session})
+
+        console.log("First saved log:", log)
+        logId = log._id
+
+        try {
+            // For each exercise, update the exercise's log instances and add the exercise to the log's exercises
+            for (const exercise of routine.routineExercises) {
+                
+                const exerciseObject = await Exercise.findOne({ 'exerciseName': exercise })
+
+                if (!exerciseObject) {
+                    throw new Error("The exercise " + exercise + " cannot be found.")
+                }
+
+                exerciseObject.logInstances.push(logId)
+                await exerciseObject.save({session})
+
+                logExercises.push({ exerciseName: exercise, sets: [] }) 
+            }
+
+            // After each exercise has been iterated and updated, complete the final edits to the log
+            log.logRoutine = logRoutine
+            log.logExercises = logExercises
+
+            await log.save({session})
+
+            console.log("Finished saved log:", log)
+
+            await session.commitTransaction()
+            res.status(200).send(log._id)
+        } catch (error) {
+            console.log("Transaction aborted:", error)
+            await session.abortTransaction() 
+            return res.status(404).send("Error creating log")
+        } finally {
+            await session.endSession()
+        }
+    } else {
+        console.log("none!")
+        log.save()
+        res.status(200).send(log._id)
+    }
 };
 
 function deleteLogs(req, res) {
