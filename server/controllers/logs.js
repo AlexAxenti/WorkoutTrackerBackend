@@ -114,22 +114,74 @@ function deleteLogs(req, res) {
     res.status(200).send('Log Deleted')
 };
 
-function updateLogs (req, res) {
+async function updateLogs (req, res) {
     let reqBody = req.body
     let logId = reqBody._id
 
-    Log.findOne({ _id: logId }).then(log => {
+    const log = await Log.findOne({ _id: logId })
+    
+    if (log) { 
         log.logName = reqBody.logName
         log.logRoutine = reqBody.logRoutine
-        log.logExercises = reqBody.logExercises
 
-        log.save()
-        res.status(200).send(log)
-    })
-    .catch(err => {
+        updatedExercises = checkForNewLogExercises(log.logExercises, reqBody.logExercises)
+        if (updatedExercises == false) {
+            console.log("Same")
+        } else {
+            console.log("Different")
+            console.log("removedNames:", updatedExercises.removedNames)
+            console.log("newNames:", updatedExercises.newNames)
+
+            const session = await mongoose.startSession()
+            session.startTransaction()
+
+            try {
+                for (const exercise of updatedExercises.removedNames) {
+                    const exerciseObject = await Exercise.findOne({ exerciseName: exercise })
+
+                    if (!exerciseObject) {
+                        throw new Error("The exercise " + exercise + " cannot be found.")
+                    }
+
+                    console.log("ID:", logId)
+                    console.log(exerciseObject.logInstances)
+                    console.log(exerciseObject.logInstances[0] == logId)
+                    console.log(exerciseObject.logInstances[1] == logId)
+
+                    exerciseObject.logInstances = exerciseObject.logInstances.filter(id => id != logId)
+
+                    console.log(exerciseObject.logInstances)
+                    await exerciseObject.save({session})
+                }
+
+                for (const exercise of updatedExercises.newNames) {
+                    const exerciseObject = await Exercise.findOne({ exerciseName: exercise })
+
+                    if (!exerciseObject) {
+                        throw new Error("The exercise " + exercise + " cannot be found.")
+                    }
+
+                    exerciseObject.logInstances.push(logId)
+                    await exerciseObject.save({session})
+                }
+
+                log.logExercises = reqBody.logExercises
+                await log.save({session})
+                await session.commitTransaction()
+
+                res.status(200).send(log)
+            } catch (error) {
+                console.log("Transaction aborted:", error)
+                await session.abortTransaction()
+                return res.status(404).send("Error updating log")
+            } finally {
+                await session.endSession()
+            }
+        }
+    } else {
         console.log(err)
         res.status(404).send("Unable to update log")
-    })
+    }
 }
 
 
@@ -154,6 +206,29 @@ function updateLogExercise(req, res) {
         console.log(err)
         res.status(404).send("Unable to update log")
     })
+}
+
+// Helper functions
+function checkForNewLogExercises(originalExercises, updatedExercises) {
+    originalNames = []
+    updatedNames = []
+
+    for (const exercise of originalExercises) { 
+        originalNames.push(exercise.exerciseName)
+    }
+
+    for (const exercise of updatedExercises) {
+        updatedNames.push(exercise.exerciseName)
+    }
+
+    const removedNames = originalNames.filter(name => !updatedNames.includes(name))
+    const newNames = updatedNames.filter(name => !originalNames.includes(name))
+
+    if (originalNames.length == updatedNames.length && removedNames.length == 0 && newNames.length == 0) {
+        return false
+    } else {
+        return {removedNames: removedNames, newNames: newNames}
+    }
 }
 
 module.exports = {
