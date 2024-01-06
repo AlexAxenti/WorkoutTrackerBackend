@@ -13,10 +13,34 @@ function getExercises(req, res) {
 };
 
 function getExercise(req, res) {
-    exerciseId = req.params.exerciseId
+    let exerciseId = req.params.exerciseId
 
     Exercise.findOne({ _id: exerciseId }).then(exercise => {
-        res.status(200).send(exercise)
+        let logInstances = exercise.logInstances
+        let exerciseLogs = []
+
+        Log.find({ _id: { $in: logInstances } }).sort({ logDate: 'asc' }).then(logs => {
+            for (const log of logs) {
+                let logObject = {}
+                logObject.logId = log._id
+                logObject.logName = log.logName
+                logObject.logDate = log.logDate
+                logObject.logRoutine = log.logRoutine
+
+                let setsArray = (log.logExercises.filter(logExercise => logExercise.exerciseName == exercise.exerciseName))[0].sets
+                logObject.sets = setsArray
+
+                exerciseLogs.push(logObject)
+            }
+
+            let exerciseResponse = {}
+            exerciseResponse._id = exercise._id
+            exerciseResponse.exerciseName = exercise.exerciseName
+            exerciseResponse.lastWorked = exercise.lastWorked
+            exerciseResponse.exerciseHistory = exerciseLogs
+
+            res.status(200).send(exerciseResponse)
+        })
     }).catch(err => {
         console.log(err)
         res.status(404)
@@ -24,9 +48,9 @@ function getExercise(req, res) {
 };
 
 async function createExercise(req, res) {
-    reqBody = req.body;
-    exerciseName = reqBody.exerciseName;
-    lastWorked = undefined
+    let reqBody = req.body;
+    let exerciseName = reqBody.exerciseName;
+    let lastWorked = undefined
 
     const existingExercise = await Exercise.findOne({ exerciseName: exerciseName })
 
@@ -49,8 +73,8 @@ async function createExercise(req, res) {
 };
 
 function deleteExercise(req, res) {
-    reqBody = req.body
-    exerciseName = reqBody.exerciseName
+    let reqBody = req.body
+    let exerciseName = reqBody.exerciseName
 
     Exercise.deleteOne({ exerciseName: exerciseName }).then(result => {
         if (result.deletedCount == 1) {
