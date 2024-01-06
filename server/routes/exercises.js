@@ -9,5 +9,7 @@ router.get('/:exerciseId', controller.getExercise);
 
 router.post('/', controller.createExercise);
 
+router.delete('/', controller.deleteExercise);
+
 
 module.exports = router;

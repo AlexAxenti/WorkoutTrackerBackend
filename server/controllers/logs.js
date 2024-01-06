@@ -104,7 +104,7 @@ async function postLogs (req, res) {
 
 async function deleteLogs(req, res) {
     reqBody = req.body;
-    logId = req.body._id;
+    logId = reqBody._id;
 
     const session = await mongoose.startSession()
     session.startTransaction()
